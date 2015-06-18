@@ -11,11 +11,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"code.google.com/p/goauth2/oauth"
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/gengo/goship/lib"
 	"github.com/google/go-github/github"
 	"github.com/kylelemons/go-gypsy/yaml"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -75,10 +75,8 @@ func parseConfig() (c config) {
 // Checks github first and ignores pull if already up to date.
 func updateChefRepo(conf config) {
 	githubToken := os.Getenv(gitHubAPITokenEnvVar)
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: githubToken},
-	}
-	client := github.NewClient(t.Client())
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: githubToken})
+	client := github.NewClient(oauth2.NewClient(oauth2.NoContext, ts))
 	s := "git --git-dir=" + conf.chefRepo + "/.git rev-parse HEAD"
 	localHash, _ := execCmd(s, conf)
 	commits, _, err := client.Repositories.ListCommits("Gengo", "devops-tools", nil)
